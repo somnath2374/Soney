@@ -1,0 +1,82 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.navbar {
+  background-color: var(--navbar-bg-color);
+  color: var(--navbar-text-color);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.navbar li {
+  margin-right: 20px;
+}
+
+.navbar a {
+  color: var(--navbar-link-color);
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.navbar a:hover {
+  color: var(--navbar-link-hover-color);
+}
+
+.navbar button {
+  background-color: var(--navbar-button-bg-color);
+  color: var(--navbar-button-text-color);
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.navbar button:hover {
+  background-color: var(--navbar-button-hover-bg-color);
+}
+
+.light-theme {
+  --navbar-bg-color: #0d47a1; /* Light Blue */
+  --navbar-text-color: #060606; /* Dark Blue */
+  --navbar-link-color: #ffffff; /* Dark Blue */
+  --navbar-link-hover-color: #1565c0; /* Medium Blue */
+  --navbar-button-bg-color: #bbdefb; /* Dark Blue */
+  --navbar-button-text-color: #ffffff; /* White */
+  --navbar-button-hover-bg-color: #1565c0; /* Medium Blue */
+  --background-color: #0d48a13a; /* Light Blue Background */
+  --text-color: #f3eeee; /* Dark Blue Text */
+}
+
+.dark-theme {
+  --navbar-bg-color: #0d47a1; /* Dark Blue */
+  --navbar-text-color: #bbdefb; /* Light Blue */
+  --navbar-link-color: #000000; /* Light Blue */
+  --navbar-link-hover-color: #e3f2fd; /* Lighter Blue */
+  --navbar-button-bg-color: #bbdefb; /* Light Blue */
+  --navbar-button-text-color: #0d47a1; /* Dark Blue */
+  --navbar-button-hover-bg-color: #00eaff; /* Lighter Blue */
+  --background-color: #080808; /* Dark Blue Background */
+  --text-color: #bbdefb; /* Light Blue Text */
+}
+
+.app {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}

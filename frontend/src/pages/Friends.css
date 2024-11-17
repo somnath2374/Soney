@@ -1,0 +1,61 @@
+.friends {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.friends h1 {
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+.friends input {
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid var(--navbar-link-color);
+  border-radius: 4px;
+  font-size: 16px;
+  width: calc(100% - 24px);
+}
+
+.friends button {
+  background-color: var(--navbar-button-bg-color);
+  color: var(--navbar-button-text-color);
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  transition: background-color 0.3s;
+  border-radius: 4px;
+  margin: 5px;
+}
+
+.friends button:hover {
+  background-color: var(--navbar-button-hover-bg-color);
+}
+
+.friends ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.friends li {
+  background-color: var(--background-color);
+  border: 1px solid var(--navbar-link-color);
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.friends li button {
+  margin-left: 10px;
+}

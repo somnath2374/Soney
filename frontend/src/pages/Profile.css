@@ -1,0 +1,11 @@
+.profile {
+  padding: 20px;
+}
+
+.profile h1 {
+  color: var(--text-color);
+}
+
+.profile p {
+  color: var(--text-color);
+}
