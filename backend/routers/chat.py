@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, Body
 from fastapi.security import OAuth2PasswordBearer
-from utils.auth import get_current_user
 from fastapi.middleware.cors import CORSMiddleware
+from utils.auth import get_current_user
 from services.database import users_collection, chats_collection
 from models.chat import ChatMessage, ChatCreate, ChatResponse
 from models.user import UserResponse
@@ -48,15 +48,19 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
     try:
         while True:
             data = await websocket.receive_text()
+            message_data = json.loads(data)  # Parse the JSON string to a dictionary
             chat_message = ChatMessage(
                 sender_id=user.username,
                 receiver_id=receiver_id,
-                message=data,
-                timestamp=datetime.utcnow()
+                message=message_data['message'],
+                timestamp=datetime.utcnow()  # Set the timestamp here
             )
-            await chats_collection.insert_one(chat_message.dict(by_alias=True))
+            result = await chats_collection.insert_one(chat_message.dict(by_alias=True, exclude={"id"}))
+            chat_message.id = str(result.inserted_id)  # Set the id field correctly
+            chat_message_dict = chat_message.dict(by_alias=True)
+            chat_message_dict["timestamp"] = chat_message_dict["timestamp"].isoformat()  # Convert datetime to string
             if receiver_id in active_connections:
-                await active_connections[receiver_id].send_text(json.dumps(chat_message.dict(by_alias=True)))
+                await active_connections[receiver_id].send_text(json.dumps(chat_message_dict))
     except WebSocketDisconnect:
         if user.username in active_connections:
             del active_connections[user.username]
@@ -75,7 +79,7 @@ async def get_messages(friend_id: str, user: UserResponse = Depends(get_current_
             {"sender_id": friend_id, "receiver_id": user.username}
         ]
     }).sort("timestamp", 1).to_list(100)
-    return [ChatResponse(**message, id=str(message["_id"])) for message in messages]
+    return [ChatResponse(**message) for message in messages]
 
 @router.post("/messages", response_model=ChatResponse)
 async def send_message(chat_create: ChatCreate, user: UserResponse = Depends(get_current_user)):
@@ -84,8 +88,10 @@ async def send_message(chat_create: ChatCreate, user: UserResponse = Depends(get
     mes_dict["timestamp"] = datetime.utcnow()
     mes_dict["read"] = False
     result = await chats_collection.insert_one(mes_dict)
+    mes_dict["_id"] = str(result.inserted_id)
     if chat_create.receiver_id in active_connections:
-        mes_dict["timestamp"] = mes_dict["timestamp"].isoformat()
-        mes_dict.pop("_id", None)
+        mes_dict["timestamp"] = mes_dict["timestamp"].isoformat()  # Convert datetime to string
         await active_connections[chat_create.receiver_id].send_text(json.dumps(mes_dict))
     return ChatResponse(**mes_dict, id=str(result.inserted_id))
+
+ws.include_router(router)

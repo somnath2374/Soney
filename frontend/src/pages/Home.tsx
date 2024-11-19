@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getUserProfile, getPosts, logout } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import "./Home.css";
+import PostItem from '../components/PostItem';
 
 type Post = {
   id: string;
@@ -13,6 +14,7 @@ type Post = {
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [comments, setComments] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     getPosts().then(data => setPosts(data));
@@ -30,7 +32,6 @@ const Home: React.FC = () => {
     fetchUserProfile();
   }, []);
 
-
   return (
     <div className='home'>
       <h1>Home</h1>
@@ -41,14 +42,16 @@ const Home: React.FC = () => {
       ) : (
         <p>Please log in..</p>
       )}
-      <h1>Posts page</h1>
+      <h1>Posts</h1>
       <ul>
         {posts.map((post) => (
-          <li key={post.id}>
-            <h2>{post.title}</h2>
-            <p>{post.content}</p>
-            <p>Author: {post.author}</p>
-          </li>
+          <PostItem
+            key={post.id}
+            post={post}
+            posts={posts}
+            comments={comments}
+            setPosts={setPosts}
+          />
         ))}
       </ul>
     </div>

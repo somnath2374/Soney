@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class ChatMessage(BaseModel):
-    id: Optional[str] = Field(alias="_id")
+    id: Optional[str] = Field(default=None,alias="_id")
     sender_id: str
     receiver_id: str
     message: str
@@ -15,6 +15,7 @@ class ChatCreate(BaseModel):
     message: str
 
 class ChatResponse(BaseModel):
+    id: Optional[str] = Field(default=None,defalias="_id")
     sender_id: str
     receiver_id: str
     message: str

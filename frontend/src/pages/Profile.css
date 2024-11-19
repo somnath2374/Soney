@@ -1,5 +1,15 @@
-.profile {
+.profile-container {
+  display: flex;
+  height: 88vh;
+  justify-content: space-between;
   padding: 20px;
+  text-align: center;
+}
+
+.profile {
+  flex: 1;
+  padding: 20px;
+  text-align: center;
 }
 
 .profile h1 {
@@ -8,4 +18,35 @@
 
 .profile p {
   color: var(--text-color);
+  text-align: left;
+}
+
+.friend-request {
+  margin-top: 60px;
+}
+
+.friend-request input {
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid var(--navbar-link-color);
+  border-radius: 4px;
+  font-size: 16px;
+  width: calc(100% - 24px);
+}
+
+.friend-request button {
+  background-color: var(--navbar-button-bg-color);
+  color: var(--navbar-button-text-color);
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  transition: background-color 0.3s;
+  border-radius: 4px;
+  margin: 5px;
+}
+
+.friend-request button:hover {
+  background-color: var(--navbar-button-hover-bg-color);
 }

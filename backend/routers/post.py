@@ -126,7 +126,7 @@ async def like_post(post_id: str):
             raise HTTPException(status_code=404, detail="Post not found")
         await posts_collection.update_one(
             {"_id": ObjectId(post_id)},
-            {"$inc": {"likes_count": post["likes_count"] + 1}}
+            {"$inc": {"likes_count": 1}}
         )
         return {"message": "Post liked"}
     except errors.PyMongoError as e:
@@ -142,7 +142,7 @@ async def dislike_post(post_id: str):
             raise HTTPException(status_code=404, detail="Post not found")
         await posts_collection.update_one(
             {"_id": ObjectId(post_id)},
-            {"$inc": {"dislikes_count": post["dislikes_count"] + 1}}
+            {"$inc": {"dislikes_count":  1}}
         )
         return {"message": "Post disliked"}
     except errors.PyMongoError as e:
@@ -165,7 +165,7 @@ async def comment_post(post_id: str, comment: str=Body(...,embed=True), user: Us
         result = await comments_collection.insert_one(comment_dict)
         await posts_collection.update_one(
             {"_id": ObjectId(post_id)},
-            {"$inc": {"comments_count": post["comments_count"] + 1},
+            {"$inc": {"comments_count": 1},
              "$push": {"comments": str(result.inserted_id)}}
         )
         return {"message": "Comment added", "comment_id": str(result.inserted_id)}

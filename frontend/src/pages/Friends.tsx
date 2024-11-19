@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { getFriends, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, getUserProfile } from '../services/api';
+import { getFriends, acceptFriendRequest, rejectFriendRequest, getUserProfile } from '../services/api';
 import './Friends.css';
-import { AxiosResponse } from 'axios';
 
 const Friends: React.FC = () => {
   const [friends, setFriends] = useState<string[]>([]);
   const [friendRequests, setFriendRequests] = useState<string[]>([]);
   const [userId, setUserId] = useState<string>('');
-  const [newFriendId, setNewFriendId] = useState<string>('');
-  
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       const userProfile = await getUserProfile();
@@ -27,12 +25,6 @@ const Friends: React.FC = () => {
     fetchFriends();
   }, []);
 
-  const handleSendFriendRequest = async () => {
-    const userProfile = await getUserProfile();
-    await sendFriendRequest(newFriendId);
-    alert('Friend request sent');
-    setNewFriendId('');
-  };
 
   const handleAcceptFriendRequest = async (friendId: string) => {
     await acceptFriendRequest(friendId);
@@ -48,28 +40,33 @@ const Friends: React.FC = () => {
   };
 
   return (
-    <div className='friends'>
-      <h1>Friends</h1>
-      <div>
-        <input placeholder="Friend ID" value={newFriendId} onChange={(e) => setNewFriendId(e.target.value)} />
-        <button onClick={handleSendFriendRequest}>Send Friend Request</button>
+    <div className='friends-container'>
+      <div className='friends'>
+        <h2>Friend Requests</h2>
+        {friendRequests.length > 0 ? (
+          <ul>
+            {friendRequests.map((friendId) => (
+              <li key={friendId}>
+                {friendId}
+                <button onClick={() => handleAcceptFriendRequest(friendId)}>Accept</button>
+                <button onClick={() => handleRejectFriendRequest(friendId)}>Reject</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No friend requests</p>
+        )}
+        <h2>Friends List</h2>
+        {friends.length > 0 ? (
+          <ul>
+            {friends.map((friend) => (
+              <li key={friend}>{friend}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>No friends</p>
+        )}
       </div>
-      <h2>Friend Requests</h2>
-      <ul>
-        {friendRequests.map((friendId) => (
-          <li key={friendId}>
-            {friendId}
-            <button onClick={() => handleAcceptFriendRequest(friendId)}>Accept</button>
-            <button onClick={() => handleRejectFriendRequest(friendId)}>Reject</button>
-          </li>
-        ))}
-      </ul>
-      <h2>Friends List</h2>
-      <ul>
-        {friends.map((friend) => (
-          <li key={friend}>{friend}</li>
-        ))}
-      </ul>
     </div>
   );
 };

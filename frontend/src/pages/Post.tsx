@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getPosts, createPost, likePost, dislikePost, commentPost, getUserProfile } from '../services/api';
+import { getPosts, createPost, getUserProfile } from '../services/api';
 import './Post.css';
+import PostItem from '../components/PostItem';
 
 const Post: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -10,7 +11,7 @@ const Post: React.FC = () => {
   const [pictures, setPictures] = useState<string[]>([]);
   const [videos, setVideos] = useState<string[]>([]);
   const [authorId, setAuthorId] = useState('');
-  const [comment, setComment] = useState('');
+  const [comments, setComments] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -36,6 +37,8 @@ const Post: React.FC = () => {
     setPictures([]);
     setVideos([]);
     alert('Post created successfully');
+    const data = await getPosts();
+    setPosts(data);
   };
 
   const handleHashtagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,70 +53,35 @@ const Post: React.FC = () => {
     setVideos(e.target.value.split(',').map(url => url.trim()));
   };
 
-  const handleLikePost = async (postId: string) => {
-    await likePost(postId);
-    alert('Post liked');
-  };
-
-  const handleDislikePost = async (postId: string) => {
-    await dislikePost(postId);
-    alert('Post disliked');
-  };
-
-  const handleCommentPost = async (postId: string) => {
-    if (comment.trim() === '') {
-      alert('Comment cannot be empty');
-      return;
-    }
-    await commentPost(postId, comment);
-    setComment('');
-    alert('Comment added');
-  };
-
   return (
-    <div className='post'>
-      <h1>Posts</h1>
-      <div>
-        <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input placeholder="Content" value={content} onChange={(e) => setContent(e.target.value)} />
-        <input placeholder="Hashtags (comma separated)" value={hashtags.join(', ')} onChange={handleHashtagsChange} />
-        <input placeholder="Pictures URLs (comma separated)" value={pictures.join(', ')} onChange={handlePicturesChange} />
-        <input placeholder="Videos URLs (comma separated)" value={videos.join(', ')} onChange={handleVideosChange} />
-        <button onClick={handleCreatePost}>Create Post</button>
+    <div className='post-container'>
+      <div className='create-post'>
+        <h1>Create Post</h1>
+        <div>
+          <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input placeholder="Content" value={content} onChange={(e) => setContent(e.target.value)} />
+          <input placeholder="Hashtags (comma separated)" value={hashtags.join(', ')} onChange={handleHashtagsChange} />
+          <input placeholder="Pictures URLs (comma separated)" value={pictures.join(', ')} onChange={handlePicturesChange} />
+          <input placeholder="Videos URLs (comma separated)" value={videos.join(', ')} onChange={handleVideosChange} />
+          <div className='button-container'>
+            <button onClick={handleCreatePost}>Create Post</button>
+          </div>
+        </div>
       </div>
-      <ul>
-        {posts.map((post) => (
-          <li key={post.id}>
-            <h2>{post.title}</h2>
-            <p>{post.content}</p>
-            <p>Author: {post.author_id}</p>
-            <p>Hashtags: {post.hashtags.join(', ')}</p>
-            {post.pictures && post.pictures.map((pic: string, index: number) => (
-              <img key={index} src={pic} alt="Post pic" style={{ maxWidth: '100%' }} />
-            ))}
-            {post.videos && post.videos.map((video: string, index: number) => (
-              <video key={index} controls style={{ maxWidth: '100%' }}>
-                <source src={video} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            ))}
-            <div>
-              <button onClick={() => handleLikePost(post.id)}>Like</button>
-              <button onClick={() => handleDislikePost(post.id)}>Dislike</button>
-              <input placeholder="Add a comment" value={comment} onChange={(e) => setComment(e.target.value)} />
-              <button onClick={() => handleCommentPost(post.id)}>Comment</button>
-            </div>
-            <div>
-              <h3>Comments</h3>
-              <ul>
-                {post.comments && post.comments.map((comment: any, index: number) => (
-                  <li key={index}>{comment.content}</li>
-                ))}
-              </ul>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div className='posts'>
+        <h1>Posts</h1>
+        <ul>
+          {posts.map((post) => (
+            <PostItem
+              key={post.id}
+              post={post}
+              posts={posts}
+              comments={comments}
+              setPosts={setPosts}
+            />
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { getUserProfile } from '../services/api';
+import { getUserProfile, sendFriendRequest } from '../services/api';
 import './Profile.css';
 import Friends from './Friends';
 
 const Profile: React.FC = () => {
   const [user, setUser] = useState<any>(null);
+  const [newFriendId, setNewFriendId] = useState<string>('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -14,18 +15,35 @@ const Profile: React.FC = () => {
     fetchProfile();
   }, []);
 
+  const handleSendFriendRequest = async () => {
+    await sendFriendRequest(newFriendId);
+    alert('Friend request sent');
+    setNewFriendId('');
+  };
+
   return (
-    <div className='profile'>
-      <h1>Profile</h1>
-      {user ? (
-        <div>
-          <h2>{user.name}</h2>
-          <p>Email: {user.email}</p>
-          <Friends/>
+    <div className='profile-container'>
+      <div className='profile'>
+        <h1>Profile</h1>
+        {user ? (
+          <div>
+            <p>User: {user.username}</p>
+            <p>Email: {user.email}</p>
+          </div>
+        ) : (
+          <p>Loading...</p>
+        )}
+        <div className='friend-request'>
+          <h2>Send Friend Request</h2>
+          <input
+            placeholder="Friend ID"
+            value={newFriendId}
+            onChange={(e) => setNewFriendId(e.target.value)}
+          />
+          <button onClick={handleSendFriendRequest}>Send Friend Request</button>
         </div>
-      ) : (
-        <p>Loading...</p>
-      )}
+      </div>
+      <Friends />
     </div>
   );
 };

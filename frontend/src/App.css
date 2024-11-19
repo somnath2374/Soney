@@ -53,19 +53,19 @@ body {
 .light-theme {
   --navbar-bg-color: #0d47a1; /* Light Blue */
   --navbar-text-color: #060606; /* Dark Blue */
-  --navbar-link-color: #ffffff; /* Dark Blue */
+  --navbar-link-color: #000000; /* Dark Blue */
   --navbar-link-hover-color: #1565c0; /* Medium Blue */
-  --navbar-button-bg-color: #bbdefb; /* Dark Blue */
+  --navbar-button-bg-color: #4292d4; /* Dark Blue */
   --navbar-button-text-color: #ffffff; /* White */
   --navbar-button-hover-bg-color: #1565c0; /* Medium Blue */
   --background-color: #0d48a13a; /* Light Blue Background */
-  --text-color: #f3eeee; /* Dark Blue Text */
+  --text-color: #000000; /* Dark Blue Text */
 }
 
 .dark-theme {
   --navbar-bg-color: #0d47a1; /* Dark Blue */
   --navbar-text-color: #bbdefb; /* Light Blue */
-  --navbar-link-color: #000000; /* Light Blue */
+  --navbar-link-color: #fafafa; /* Light Blue */
   --navbar-link-hover-color: #e3f2fd; /* Lighter Blue */
   --navbar-button-bg-color: #bbdefb; /* Light Blue */
   --navbar-button-text-color: #0d47a1; /* Dark Blue */

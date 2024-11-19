@@ -9,7 +9,7 @@ interface Message {
     sender_id: string,
     receiver_id: string,
     message: string,
-    timestamp: Date,
+    timestamp: string,
     read: boolean
 }
 
@@ -19,12 +19,14 @@ const Chat: React.FC = () => {
   const [input, setInput] = useState('');
   const [friends, setFriends] = useState<string[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchFriends = async () => {
       const user = await getUserProfile();
+      setCurrentUser(user.username);
       const friendsList = await getFriends(user.id);
       setFriends(friendsList);
     };
@@ -57,7 +59,14 @@ const Chat: React.FC = () => {
       ws.onmessage = (event) => {
         try {
           const messageData = JSON.parse(event.data);
-          setMessages((prevMessages) => [...prevMessages, messageData]);
+          setMessages((prevMessages) => {
+            const messageExists = prevMessages.some(msg => 
+              msg.sender_id === messageData.sender_id && 
+              msg.message === messageData.message && 
+              msg.timestamp === messageData.timestamp
+            );
+            return messageExists ? prevMessages : [...prevMessages, messageData];
+          });
           scrollToBottom();
         } catch (e) {
           console.log('Message parsing error:', e);
@@ -82,15 +91,19 @@ const Chat: React.FC = () => {
     if (socket && input.trim()) {
       const user = await getUserProfile();
       const newMessage: Message = {
-        sender_id: user.username, // Replace with the actual sender ID
+        sender_id: user.username,
         receiver_id: selectedFriend!,
         message: input,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         read: false,
       };
-      await sendMessage(selectedFriend!, input);
+
+      // Send the message via WebSocket
       socket.send(JSON.stringify(newMessage));
+
+      // Update the state to reflect the new message
       setMessages((prevMessages) => [...prevMessages, newMessage]);
+
       setInput('');
       scrollToBottom();
     }
@@ -122,7 +135,7 @@ const Chat: React.FC = () => {
                   key={index}
                   className={`message ${message.sender_id === selectedFriend ? 'received' : 'sent'}`}
                 >
-                  <strong>{message.sender_id}</strong>: {message.message}
+                  <strong>{message.sender_id === currentUser ? 'You' : message.sender_id}:</strong> {message.message}
                 </div>
               ))}
               <div ref={messagesEndRef} />
