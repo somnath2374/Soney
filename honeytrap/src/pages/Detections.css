@@ -1,0 +1,46 @@
+.detections-page {
+    padding: 2rem;
+    text-align: center;
+  }
+  
+  .input-section {
+    margin-bottom: 2rem;
+  }
+  
+  .input-section input {
+    padding: 0.5rem;
+    width: 200px;
+  }
+  
+  .input-section button {
+    padding: 0.5rem 1rem;
+    margin-left: 1rem;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .history-section {
+    margin-top: 2rem;
+  }
+  
+  .history-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .history-section ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .history-section li {
+    background-color: #f1f1f1;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
