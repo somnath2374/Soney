@@ -4,3 +4,10 @@ pydantic
 motor
 python-jose
 passlib[bcrypt]
+starlette
+passlib
+jose
+pymongo
+motor
+pydantic[email]
+websocket

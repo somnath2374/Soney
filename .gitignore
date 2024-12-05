@@ -3,4 +3,7 @@
 backend/__pycache__
 backend/venv
 backend/*/__pycache__
-
+backend/bin
+backend/lib
+backend/lib64
+pyvenv.cfg

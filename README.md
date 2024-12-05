@@ -3,11 +3,16 @@ CNS Project<br>
 
 
 # Chat application
-pip install -r requirements.txt<br>
-npm start<br>
 
-terminal-1: cd backend && python -m uvicorn main:app --reload<br>
-terminal-2: cd frontend && npm start<br>
+## Installations
+terminal -1: cd backend && source ./bin/activate && pip install -r requirements.txt <br>
+terminal -2: cd frontend && npm install dependencies<br>
+terminal -3: cd honeytrap && npm install dependencies<br>
+## Run
+terminal -1: cd backend  && python -m uvicorn main:app --reload<br>
+terminal -2: cd frontend && npm start<br>
+terminal -3: cd honeytrap &&  npm start<br>
+
 
 phase-1: Social media application ready<br>
 Implemented:<br>
