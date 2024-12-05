@@ -7,6 +7,8 @@ type Honeypot = {
   purpose: string;
   username: string;
   email: string;
+  friends: string[];
+  friend_requests: string[];
 };
 
 const Honeytraps: React.FC = () => {
@@ -58,6 +60,8 @@ const Honeytraps: React.FC = () => {
                 <th>Username</th>
                 <th>Email</th>
                 <th>Purpose</th>
+                <th>Friends</th>
+                <th>Friend Requests</th>
               </tr>
             </thead>
             <tbody>
@@ -66,6 +70,8 @@ const Honeytraps: React.FC = () => {
                   <td>{honeypot.username}</td>
                   <td>{honeypot.email}</td>
                   <td>{honeypot.purpose}</td>
+                  <td>{honeypot.friends.join(', ')}</td>
+                  <td>{honeypot.friend_requests.join(', ')}</td>
                 </tr>
               ))}
             </tbody>

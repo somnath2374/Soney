@@ -1,25 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getHoneypots } from '../services/api'; 
 import './Log.css';
 
+type Honeypot = {
+  id: string;
+  purpose: string;
+  username: string;
+  email: string;
+};
+
 const Log: React.FC = () => {
-  const [honeytrapNames, setHoneytrapNames] = useState<string[]>([
-    'Trap 1',
-    'Trap 2',
-    'Trap 3',
-  ]);
-  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [honeytraps, setHoneytraps] = useState<Honeypot[]>([]);
+  const [selectedHoneytrap, setSelectedHoneytrap] = useState<Honeypot | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const handleSearch = () => {
-    if (searchTerm) {
-      setHoneytrapNames(honeytrapNames.filter((name) => name.includes(searchTerm)));
-    } else {
-      setHoneytrapNames(['Trap 1', 'Trap 2', 'Trap 3']); // Reset for demo
+  useEffect(() => {
+    fetchHoneypots();
+  }, []);
+
+  const fetchHoneypots = async () => {
+    try {
+      const data = await getHoneypots();
+      setHoneytraps(data);
+    } catch (error) {
+      console.error('Failed to fetch honeypots', error);
     }
   };
 
-  const handleRowClick = (name: string) => {
-    setSelectedName(name);
+  const handleSearch = () => {
+    if (searchTerm) {
+      setHoneytraps(honeytraps.filter((honeytrap) => honeytrap.username.includes(searchTerm)));
+    } else {
+      fetchHoneypots(); // Reset to original list
+    }
+  };
+
+  const handleRowClick = (honeytrap: Honeypot) => {
+    setSelectedHoneytrap(honeytrap);
   };
 
   return (
@@ -37,31 +54,31 @@ const Log: React.FC = () => {
         <button onClick={handleSearch}>Search</button>
       </div>
       
-      {/* Table */}
-      <div className="log-table">
-        <table>
-          <thead>
-            <tr>
-              <th>HoneyTrap Names</th>
-            </tr>
-          </thead>
-          <tbody>
-            {honeytrapNames.map((name, index) => (
-              <tr key={index} onClick={() => handleRowClick(name)}>
-                <td>{name}</td>
-              </tr>
+      <div className="log-content">
+        {/* Honeytrap List */}
+        <div className="honeytrap-list">
+          <h2>Honeytraps</h2>
+          <ul>
+            {honeytraps.map((honeytrap) => (
+              <li key={honeytrap.id} onClick={() => handleRowClick(honeytrap)}>
+                {honeytrap.username}
+              </li>
             ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Details Section */}
-      {selectedName && (
-        <div className="details-section">
-          <h2>{selectedName}</h2>
-          <p>Details about {selectedName} will be displayed here.</p>
+          </ul>
         </div>
-      )}
+        
+        {/* Logs Section */}
+        <div className="logs-section">
+          {selectedHoneytrap ? (
+            <>
+              <h2>Logs for {selectedHoneytrap.username}</h2>
+              <p>Logs will be displayed here.</p>
+            </>
+          ) : (
+            <p>Select a honeytrap to view logs.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

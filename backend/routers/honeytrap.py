@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from models.honeytrap import HoneytrapCreate
-from services.database import honeytraps_collection
+from models.honeytrap import HoneytrapCreate,HoneytrapResponse
+from services.database import honeytraps_collection,users_collection
 from utils.auth import get_current_user
 import random
 import string
@@ -19,16 +19,22 @@ def generate_realistic_email():
     domains = ["example.com", "test.com", "demo.com"]
     return f"{generate_random_string(6)}@{random.choice(domains)}"
 
-@router.post("/create")
+@router.post("/create", response_model=HoneytrapResponse)
 async def create_honeytrap(honeytrap: HoneytrapCreate):
     try:
+        username = generate_realistic_username()
+        email = generate_realistic_email()
         honeytrap_data = {
             "purpose": honeytrap.purpose,
-            "username": generate_realistic_username(),
-            "email": generate_realistic_email(),
+            "username": username,
+            "email": email,
+            "friends": [],
+            "friend_requests": []
         }
         result = await honeytraps_collection.insert_one(honeytrap_data)
-        return {"message": "Honeypot created successfully", "id": str(result.inserted_id)}
+        honeytrap_data["id"] = str(result.inserted_id)
+        await users_collection.insert_one(honeytrap_data)  # Add to users collection as well
+        return honeytrap_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
