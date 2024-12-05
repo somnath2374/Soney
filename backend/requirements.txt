@@ -11,3 +11,4 @@ pymongo
 motor
 pydantic[email]
 websocket
+apscheduler
