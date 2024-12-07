@@ -14,3 +14,8 @@ export const getHoneypots = async () => {
   const response = await axios.get('/honeytrap/list');
   return response.data;
 };
+
+export const getHoneytrapLogs = async (username: string) => {
+  const response = await axios.get(`/honeytrap/logs/${username}`);
+  return response.data;
+};

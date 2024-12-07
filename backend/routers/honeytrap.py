@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from models.honeytrap import HoneytrapCreate, HoneytrapResponse
-from services.database import honeytraps_collection, users_collection, posts_collection
+from services.database import honeytraps_collection, users_collection, logs_collection
 from utils.auth import get_current_user
 from typing import List
 from routers.automate import *
@@ -9,7 +9,6 @@ from routers.automate import *
 router = APIRouter()
 
 logging.basicConfig(level=logging.INFO)
-
 
 @router.post("/create", response_model=HoneytrapResponse)
 async def create_honeytrap(honeytrap: HoneytrapCreate, background_tasks: BackgroundTasks):
@@ -43,5 +42,15 @@ async def get_honeypots():
         for honeypot in honeypots:
             honeypot["id"] = str(honeypot.pop("_id"))
         return honeypots
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/logs/{username}", response_model=List[dict])
+async def get_honeytrap_logs(username: str):
+    try:
+        logs = await logs_collection.find({"username": username}).to_list(length=100)
+        for log in logs:
+            log["_id"] = str(log["_id"])
+        return logs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

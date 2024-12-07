@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getHoneypots } from '../services/api'; 
+import { getHoneypots, getHoneytrapLogs } from '../services/api'; 
 import './Log.css';
 
 type Honeypot = {
@@ -10,9 +10,16 @@ type Honeypot = {
   friends: string[];
 };
 
+type LogEntry = {
+  username: string;
+  action: string;
+  timestamp: string;
+};
+
 const Log: React.FC = () => {
   const [honeytraps, setHoneytraps] = useState<Honeypot[]>([]);
   const [selectedHoneytrap, setSelectedHoneytrap] = useState<Honeypot | null>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
@@ -28,6 +35,15 @@ const Log: React.FC = () => {
     }
   };
 
+  const fetchLogs = async (username: string) => {
+    try {
+      const data = await getHoneytrapLogs(username);
+      setLogs(data);
+    } catch (error) {
+      console.error('Failed to fetch logs', error);
+    }
+  };
+
   const handleSearch = () => {
     if (searchTerm) {
       setHoneytraps(honeytraps.filter((honeytrap) => honeytrap.username.includes(searchTerm)));
@@ -38,6 +54,7 @@ const Log: React.FC = () => {
 
   const handleRowClick = (honeytrap: Honeypot) => {
     setSelectedHoneytrap(honeytrap);
+    fetchLogs(honeytrap.username);
   };
 
   return (
@@ -74,9 +91,13 @@ const Log: React.FC = () => {
             <>
               <h2>Logs for {selectedHoneytrap.username}</h2>
               <p>Purpose: {selectedHoneytrap.purpose}</p>
-              <p>Email: {selectedHoneytrap.email}</p>
-              <p>Friends: {selectedHoneytrap.friends.join(', ')}</p>
-              <p>Logs will be displayed here.</p>
+              <ul>
+                {logs.map((log, index) => (
+                  <li key={index}>
+                    <p>{log.timestamp}: {log.action}</p>
+                  </li>
+                ))}
+              </ul>
             </>
           ) : (
             <p>Select a honeytrap to view logs.</p>

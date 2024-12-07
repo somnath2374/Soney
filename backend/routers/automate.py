@@ -2,7 +2,7 @@ import random
 import datetime
 import logging
 import asyncio
-from services.database import honeytraps_collection, users_collection, posts_collection
+from services.database import honeytraps_collection, users_collection, posts_collection, comments_collection, logs_collection
 import string
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -48,6 +48,14 @@ def generate_comment_content(post_title: str):
     ]
     return random.choice(comments)
 
+async def log_action(username: str, action: str):
+    log_entry = {
+        "username": username,
+        "action": action,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+    await logs_collection.insert_one(log_entry)
+
 async def create_enticing_post(username: str):
     title, content = generate_enticing_post_content()
     post_data = {
@@ -65,6 +73,7 @@ async def create_enticing_post(username: str):
         "videos": []
     }
     await posts_collection.insert_one(post_data)
+    await log_action(username, f"Created post: {title}")
 
 async def get_random_honeytrap(exclude_username: str) -> str:
     honeytraps = await honeytraps_collection.find({"username": {"$ne": exclude_username}}).to_list(length=100)
@@ -85,7 +94,7 @@ async def send_friend_request(sender_username: str):
                 {"username": receiver_username},
                 {"$push": {"friend_requests": sender_username}}
             )
-            logging.info(f"Friend request sent from {sender_username} to {receiver_username}")
+            await log_action(sender_username, f"Sent friend request to {receiver_username}")
 
             # Accept the friend request after a delay
             await asyncio.sleep(20)  # Delay of 20 seconds before accepting the friend request
@@ -112,7 +121,7 @@ async def accept_friend_request(username: str, friend_username: str):
             {"username": friend_username},
             {"$addToSet": {"friends": username}}
         )
-        logging.info(f"Friend request from {friend_username} accepted by {username}")
+        await log_action(username, f"Accepted friend request from {friend_username}")
 
 async def interact_with_posts(username: str):
     posts = await posts_collection.find({"author_id": {"$ne": username}}).to_list(length=100)
@@ -124,13 +133,13 @@ async def interact_with_posts(username: str):
                 {"_id": post["_id"]},
                 {"$inc": {"likes_count": 1}}
             )
-            logging.info(f"{username} liked post {post['title']}")
+            await log_action(username, f"Liked post {post['title']}")
         elif action == "dislike":
             await posts_collection.update_one(
                 {"_id": post["_id"]},
                 {"$inc": {"dislikes_count": 1}}
             )
-            logging.info(f"{username} disliked post {post['title']}")
+            await log_action(username, f"Disliked post {post['title']}")
         elif action == "comment":
             comment_content = generate_comment_content(post["title"])
             comment_data = {
@@ -139,12 +148,13 @@ async def interact_with_posts(username: str):
                 "content": comment_content,
                 "created_at": datetime.datetime.now().isoformat()
             }
+            result = await comments_collection.insert_one(comment_data)
             await posts_collection.update_one(
                 {"_id": post["_id"]},
                 {"$inc": {"comments_count": 1},
-                 "$push": {"comments": comment_data}}
+                 "$push": {"comments": str(result.inserted_id)}}
             )
-            logging.info(f"{username} commented on post {post['title']}: {comment_content}")
+            await log_action(username, f"Commented on post {post['title']}: {comment_content}")
 
 def schedule_post_creation(username: str):
     for i in range(5):  # Schedule 5 posts
