@@ -54,3 +54,5 @@ async def get_honeytrap_logs(username: str):
         return logs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+schedule_analysis()

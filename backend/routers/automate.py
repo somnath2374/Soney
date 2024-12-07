@@ -5,6 +5,7 @@ import asyncio
 from services.database import honeytraps_collection, users_collection, posts_collection, comments_collection, logs_collection
 import string
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from routers.analyser import analyze_interactions
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
@@ -166,3 +167,6 @@ def schedule_friend_requests(username: str):
 
 def schedule_interactions(username: str):
     scheduler.add_job(interact_with_posts, 'interval', minutes=2, args=[username], misfire_grace_time=60)
+
+def schedule_analysis():
+    scheduler.add_job(analyze_interactions, 'interval', minutes=3, misfire_grace_time=60)
