@@ -4,8 +4,11 @@ from models.user import UserCreate, UserResponse
 from utils.auth import get_password_hash, verify_password, create_access_token
 from services.database import users_collection
 from pymongo.errors import PyMongoError
+import logging
 
 router = APIRouter()
+
+logging.basicConfig(level=logging.INFO)
 
 @router.post("/signup", response_model=UserResponse)
 async def register(user: UserCreate):
@@ -36,6 +39,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         access_token = create_access_token(data={"sub": user["username"]})
         return {"access_token": access_token, "token_type": "bearer"}
     except PyMongoError as e:
+        logging.error(f"Database error: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
     except Exception as e:
+        logging.error(f"Error: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

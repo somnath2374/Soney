@@ -1,6 +1,7 @@
 import random
 import datetime
 import logging
+import asyncio
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from models.honeytrap import HoneytrapCreate, HoneytrapResponse
 from models.post import PostCreate, PostResponse
@@ -81,10 +82,13 @@ async def send_friend_request(sender_username: str):
             )
             logging.info(f"Friend request sent from {sender_username} to {receiver_username}")
 
-async def accept_friend_request(username: str):
+            # Accept the friend request after a delay
+            await asyncio.sleep(20)  # Delay of 20 seconds before accepting the friend request
+            await accept_friend_request(receiver_username, sender_username)
+
+async def accept_friend_request(username: str, friend_username: str):
     user = await users_collection.find_one({"username": username})
-    if user and user["friend_requests"]:
-        friend_username = random.choice(user["friend_requests"])
+    if user and friend_username in user["friend_requests"]:
         await users_collection.update_one(
             {"username": username},
             {"$pull": {"friend_requests": friend_username},
@@ -103,7 +107,6 @@ def schedule_post_creation(username: str):
 
 def schedule_friend_requests(username: str):
     scheduler.add_job(send_friend_request, 'interval', minutes=1, args=[username], misfire_grace_time=60)
-    scheduler.add_job(accept_friend_request, 'interval', minutes=2, args=[username], misfire_grace_time=60)
 
 @router.post("/create", response_model=HoneytrapResponse)
 async def create_honeytrap(honeytrap: HoneytrapCreate, background_tasks: BackgroundTasks):
@@ -136,5 +139,5 @@ async def get_honeypots():
         for honeypot in honeypots:
             honeypot["id"] = str(honeypot.pop("_id"))
         return honeypots
-    except Exception as e: 
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
