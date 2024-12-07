@@ -54,32 +54,3 @@
   width: 65%;
   padding-left: 1rem;
 }
-
-.log-table {
-  margin: 1rem auto;
-  width: 50%;
-}
-
-.log-table table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.log-table th, td {
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  text-align: left;
-}
-
-.log-table tr:hover {
-  background-color: #f1f1f1;
-  cursor: pointer;
-}
-
-.details-section {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}

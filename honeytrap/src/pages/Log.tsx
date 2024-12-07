@@ -7,6 +7,7 @@ type Honeypot = {
   purpose: string;
   username: string;
   email: string;
+  friends: string[];
 };
 
 const Log: React.FC = () => {
@@ -72,6 +73,9 @@ const Log: React.FC = () => {
           {selectedHoneytrap ? (
             <>
               <h2>Logs for {selectedHoneytrap.username}</h2>
+              <p>Purpose: {selectedHoneytrap.purpose}</p>
+              <p>Email: {selectedHoneytrap.email}</p>
+              <p>Friends: {selectedHoneytrap.friends.join(', ')}</p>
               <p>Logs will be displayed here.</p>
             </>
           ) : (
