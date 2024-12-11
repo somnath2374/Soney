@@ -2,7 +2,8 @@ import random
 import datetime
 import logging
 import asyncio
-from services.database import honeytraps_collection, users_collection, posts_collection, comments_collection, logs_collection
+from services.database import honeytraps_collection, users_collection, posts_collection, comments_collection
+from .log import log_action
 import string
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from routers.analyser import analyze_interactions
@@ -48,14 +49,6 @@ def generate_comment_content(post_title: str):
         "Thanks for sharing this information!"
     ]
     return random.choice(comments)
-
-async def log_action(username: str, action: str):
-    log_entry = {
-        "username": username,
-        "action": action,
-        "timestamp": datetime.datetime.now().isoformat()
-    }
-    await logs_collection.insert_one(log_entry)
 
 async def create_enticing_post(username: str):
     title, content = generate_enticing_post_content()

@@ -19,3 +19,8 @@ export const getHoneytrapLogs = async (username: string) => {
   const response = await axios.get(`/honeytrap/logs/${username}`);
   return response.data;
 };
+
+export const getDetectedUsers = async () => {
+  const response = await axios.get('/honeytrap/detected');
+  return response.data;
+};

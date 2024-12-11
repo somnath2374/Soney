@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from models.honeytrap import HoneytrapCreate, HoneytrapResponse
-from services.database import honeytraps_collection, users_collection, logs_collection
+from services.database import honeytraps_collection, users_collection, logs_collection, detected_collection
 from utils.auth import get_current_user
 from typing import List
 from routers.automate import *
@@ -52,6 +52,16 @@ async def get_honeytrap_logs(username: str):
         for log in logs:
             log["_id"] = str(log["_id"])
         return logs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/detected", response_model=List[dict])
+async def get_detected_users():
+    try:
+        detected_users = await detected_collection.find().to_list(length=100)
+        for user in detected_users:
+            user["_id"] = str(user["_id"])
+        return detected_users
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

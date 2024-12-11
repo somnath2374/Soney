@@ -2,9 +2,10 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from models.like import LikeCreate, LikeResponse
 from models.post import PostResponse
 from utils.auth import get_current_user
-from services.database import likes_collection, posts_collection
+from services.database import likes_collection, posts_collection, honeytraps_collection
 from bson import ObjectId
 from pymongo.errors import PyMongoError
+from .log import log_action  # Import the log_action function
 
 router = APIRouter()
 
@@ -30,6 +31,13 @@ async def create_like(like: LikeCreate, user: dict = Depends(get_current_user)):
             {"$inc": {"likes_count": 1}}
         )
 
+        # Check if the like is related to a honeytrap post
+        post = await posts_collection.find_one({"_id": ObjectId(like.post_id)})
+        if post:
+            honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
+            if honeytrap:
+                await log_action(user["username"], f"Liked honeytrap post: {post['title']}")
+
         return LikeResponse(**like_dict, id=str(result.inserted_id))
     except PyMongoError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
@@ -43,19 +51,28 @@ async def delete_like(like_id: str, user: dict = Depends(get_current_user)):
         like = await likes_collection.find_one({"_id": ObjectId(like_id)})
         if not like:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Like not found")
-        if like["user_id"] != user["username"]:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot remove this like")
 
-        # Delete the like entry
+        # Check if the user is authorized to delete the like
+        if like["user_id"] != user["username"]:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this like")
+
+        # Delete the like from the collection
         await likes_collection.delete_one({"_id": ObjectId(like_id)})
 
-        # Decrease the likes count in the corresponding post
+        # Update the likes count in the corresponding post
         await posts_collection.update_one(
             {"_id": ObjectId(like["post_id"])},
             {"$inc": {"likes_count": -1}}
         )
 
-        return LikeResponse(**like)
+        # Check if the like is related to a honeytrap post
+        post = await posts_collection.find_one({"_id": ObjectId(like["post_id"])})
+        if post:
+            honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
+            if honeytrap:
+                await log_action(user["username"], f"Removed like from honeytrap post: {post['title']}")
+
+        return LikeResponse(**like, id=str(like["_id"]))
     except PyMongoError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
     except Exception as e:

@@ -1,7 +1,7 @@
 # analyser.py
 import datetime
 import logging
-from services.database import logs_collection
+from services.database import logs_collection, detected_collection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,6 +26,19 @@ async def detect_high_frequency_interactors():
     
     for user in suspicious_users:
         logging.warning(f"High-frequency interaction detected for user: {user}")
+        existing_record = await detected_collection.find_one({"username": user})
+        if existing_record:
+            if "High-frequency interaction" not in existing_record["reasons"]:
+                await detected_collection.update_one(
+                    {"username": user},
+                    {"$push": {"reasons": "High-frequency interaction"}}
+                )
+        else:
+            await detected_collection.insert_one({
+                "username": user,
+                "reasons": ["High-frequency interaction"],
+                "timestamp": datetime.datetime.now().isoformat()
+            })
 
 # Content Analysis
 async def detect_spammy_content():
@@ -40,6 +53,19 @@ async def detect_spammy_content():
     
     for user in suspicious_users:
         logging.warning(f"Spammy content detected for user: {user}")
+        existing_record = await detected_collection.find_one({"username": user})
+        if existing_record:
+            if "Spammy content" not in existing_record["reasons"]:
+                await detected_collection.update_one(
+                    {"username": user},
+                    {"$push": {"reasons": "Spammy content"}}
+                )
+        else:
+            await detected_collection.insert_one({
+                "username": user,
+                "reasons": ["Spammy content"],
+                "timestamp": datetime.datetime.now().isoformat()
+            })
 
 # Time-Based Patterns
 async def detect_time_based_patterns():
@@ -62,6 +88,19 @@ async def detect_time_based_patterns():
     
     for user in suspicious_users:
         logging.warning(f"Time-based interaction pattern detected for user: {user}")
+        existing_record = await detected_collection.find_one({"username": user})
+        if existing_record:
+            if "Time-based interaction pattern" not in existing_record["reasons"]:
+                await detected_collection.update_one(
+                    {"username": user},
+                    {"$push": {"reasons": "Time-based interaction pattern"}}
+                )
+        else:
+            await detected_collection.insert_one({
+                "username": user,
+                "reasons": ["Time-based interaction pattern"],
+                "timestamp": datetime.datetime.now().isoformat()
+            })
 
 # Schedule Analysis
 async def analyze_interactions():

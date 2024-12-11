@@ -1,22 +1,18 @@
 from fastapi import APIRouter, HTTPException, Depends
 from utils.auth import get_current_user
-from services.database import users_collection
+from services.database import users_collection, honeytraps_collection
 from pymongo.errors import PyMongoError
 from models.user import UserResponse
 from bson import ObjectId
 from typing import List
+from .log import log_action  # Import the log_action function
 
 router = APIRouter()
 
 @router.post("/send_request/{friend_id}")
 async def send_friend_request(friend_id: str, user: UserResponse = Depends(get_current_user)):
-    # Add debug logging to see what's happening
-    print(f"Friend ID: {friend_id}")
-    print(f"Current user: {user}")
-    
     try:
         friend = await users_collection.find_one({"username": friend_id})
-        print(f"Found friend: {friend}")  # Check if friend is found
         
         if not friend:
             raise HTTPException(status_code=404, detail="User not found")
@@ -28,6 +24,12 @@ async def send_friend_request(friend_id: str, user: UserResponse = Depends(get_c
             {"username": friend_id},
             {"$push": {"friend_requests": user.username}}
         )
+
+        # Check if the friend request is related to a honeytrap user
+        honeytrap = await honeytraps_collection.find_one({"username": friend_id})
+        if honeytrap:
+            await log_action(user.username, f"Sent friend request to honeytrap user: {friend_id}")
+
         return {"message": "Friend request sent"}
     except PyMongoError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

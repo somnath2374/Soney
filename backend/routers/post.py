@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, status, Body
 from typing import List
 from models.post import PostCreate, PostResponse
-from models.comment import Comment
+from models.comment import Comment, CommentCreate, CommentResponse
 from models.user import UserResponse
 from utils.auth import get_current_user
-from services.database import posts_collection,comments_collection
-from bson import ObjectId, errors
+from services.database import posts_collection, comments_collection, honeytraps_collection
+from pymongo import errors
+from bson import ObjectId
+from .log import log_action  # Import the log_action function
 import datetime
 
 router = APIRouter()
@@ -119,7 +121,7 @@ async def get_post(author_id):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/like/{post_id}")
-async def like_post(post_id: str):
+async def like_post(post_id: str, user: UserResponse = Depends(get_current_user)):
     try:
         post = await posts_collection.find_one({"_id": ObjectId(post_id)})
         if not post:
@@ -128,6 +130,12 @@ async def like_post(post_id: str):
             {"_id": ObjectId(post_id)},
             {"$inc": {"likes_count": 1}}
         )
+
+        # Check if the like is related to a honeytrap post
+        honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
+        if honeytrap:
+            await log_action(user.username, f"Liked honeytrap post: {post['title']}")
+
         return {"message": "Post liked"}
     except errors.PyMongoError as e:
         raise HTTPException(status_code=500, detail="Database error")
@@ -135,15 +143,21 @@ async def like_post(post_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/dislike/{post_id}")
-async def dislike_post(post_id: str):
+async def dislike_post(post_id: str, user: UserResponse = Depends(get_current_user)):
     try:
         post = await posts_collection.find_one({"_id": ObjectId(post_id)})
         if not post:
             raise HTTPException(status_code=404, detail="Post not found")
         await posts_collection.update_one(
             {"_id": ObjectId(post_id)},
-            {"$inc": {"dislikes_count":  1}}
+            {"$inc": {"dislikes_count": 1}}
         )
+
+        # Check if the dislike is related to a honeytrap post
+        honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
+        if honeytrap:
+            await log_action(user.username, f"Disliked honeytrap post: {post['title']}")
+
         return {"message": "Post disliked"}
     except errors.PyMongoError as e:
         raise HTTPException(status_code=500, detail="Database error")
@@ -151,7 +165,7 @@ async def dislike_post(post_id: str):
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.post("/comment/{post_id}")
-async def comment_post(post_id: str, comment: str=Body(...,embed=True), user: UserResponse = Depends(get_current_user)):
+async def comment_post(post_id: str, comment: str = Body(..., embed=True), user: UserResponse = Depends(get_current_user)):
     try:
         post = await posts_collection.find_one({"_id": ObjectId(post_id)})
         if not post:
@@ -168,6 +182,12 @@ async def comment_post(post_id: str, comment: str=Body(...,embed=True), user: Us
             {"$inc": {"comments_count": 1},
              "$push": {"comments": str(result.inserted_id)}}
         )
+
+        # Check if the comment is related to a honeytrap post
+        honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
+        if honeytrap:
+            await log_action(user.username, f"Commented {comment} on honeytrap post: {post['title']}")
+
         return {"message": "Comment added", "comment_id": str(result.inserted_id)}
     except errors.PyMongoError as e:
         raise HTTPException(status_code=500, detail="Database error")
