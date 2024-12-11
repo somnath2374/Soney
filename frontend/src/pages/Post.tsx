@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getPosts, createPost, getUserProfile } from '../services/api';
+import { getPosts,getUserPosts, createPost, getUserProfile } from '../services/api';
 import './Post.css';
 import PostItem from '../components/PostItem';
 
@@ -23,7 +23,8 @@ const Post: React.FC = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const data = await getPosts();
+      const userProfile = await getUserProfile();
+      const data = await getUserPosts(userProfile.username);
       setPosts(data);
     };
     fetchPosts();
@@ -37,7 +38,8 @@ const Post: React.FC = () => {
     setPictures([]);
     setVideos([]);
     alert('Post created successfully');
-    const data = await getPosts();
+    const userProfile = await getUserProfile();
+    const data = await getUserPosts(userProfile.username);
     setPosts(data);
   };
 

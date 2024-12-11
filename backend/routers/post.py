@@ -113,6 +113,7 @@ async def get_post(author_id):
                 comments_count=post["comments_count"],
                 comments=comment_responses
             ))
+        return post_responses
     except errors.InvalidId:
         raise HTTPException(status_code=400, detail="Invalid post ID")
     except errors.PyMongoError as e:
