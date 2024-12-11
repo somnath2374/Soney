@@ -1,16 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import SummaryMetrics from '../components/SummaryMetrics';
+import { getHoneytrapStatistics } from '../services/api'; // Import the API function
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
-  const metrics = [
-    { name: 'Metric 1', value: 42 },
-    { name: 'Metric 2', value: 84 },
-    { name: 'Metric 3', value: 126 },
-    { name: 'Metric 4', value: 21 },
-    { name: 'Metric 5', value: 63 },
-    { name: 'Metric 6', value: 105 },
-  ];
+  const [metrics, setMetrics] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchHoneytrapStatistics();
+  }, []);
+
+  const fetchHoneytrapStatistics = async () => {
+    try {
+      const data = await getHoneytrapStatistics();
+      setMetrics(data);
+    } catch (error) {
+      console.error('Failed to fetch honeytrap statistics', error);
+    }
+  };
 
   return (
     <div className="dashboard">

@@ -24,3 +24,8 @@ export const getDetectedUsers = async () => {
   const response = await axios.get('/honeytrap/detected');
   return response.data;
 };
+
+export const getHoneytrapStatistics = async () => {
+  const response = await axios.get('/honeytrap/statistics');
+  return response.data;
+};

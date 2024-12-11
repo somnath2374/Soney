@@ -65,4 +65,49 @@ async def get_detected_users():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@router.get("/statistics")
+async def get_honeytrap_statistics():
+    try:
+        honeytrap_usernames = [honeytrap["username"] for honeytrap in await honeytraps_collection.find().to_list(length=1000)]
+        
+        total_honeytraps = await honeytraps_collection.count_documents({})
+        total_interactions = await logs_collection.count_documents({"username": {"$in": honeytrap_usernames}})
+        total_posts = await posts_collection.count_documents({"author_id": {"$in": honeytrap_usernames}})
+        total_likes = await posts_collection.aggregate([
+            {"$match": {"author_id": {"$in": honeytrap_usernames}}},
+            {"$group": {"_id": None, "total_likes": {"$sum": "$likes_count"}}}
+        ]).to_list(length=1)
+        total_comments = await posts_collection.aggregate([
+            {"$match": {"author_id": {"$in": honeytrap_usernames}}},
+            {"$group": {"_id": None, "total_comments": {"$sum": "$comments_count"}}}
+        ]).to_list(length=1)
+        total_friend_requests = await logs_collection.count_documents({"username": {"$in": honeytrap_usernames}, "action": {"$regex": "Sent friend request"}})
+        total_detected_users = await detected_collection.count_documents({})
+
+        most_active_honeytrap = await logs_collection.aggregate([
+            {"$match": {"username": {"$in": honeytrap_usernames}}},
+            {"$group": {"_id": "$username", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 1}
+        ]).to_list(length=1)
+        most_liked_post = await posts_collection.find({"author_id": {"$in": honeytrap_usernames}}).sort("likes_count", -1).limit(1).to_list(length=1)
+        most_commented_post = await posts_collection.find({"author_id": {"$in": honeytrap_usernames}}).sort("comments_count", -1).limit(1).to_list(length=1)
+
+        statistics = [
+            {"name": "Total Honeytraps", "value": total_honeytraps},
+            {"name": "Total Interactions", "value": total_interactions},
+            {"name": "Total Posts by Honeytraps", "value": total_posts},
+            {"name": "Total Likes on Honeytrap Posts", "value": total_likes[0]["total_likes"] if total_likes else 0},
+            {"name": "Total Comments on Honeytrap Posts", "value": total_comments[0]["total_comments"] if total_comments else 0},
+            {"name": "Total Friend Requests Sent by Honeytraps", "value": total_friend_requests},
+            {"name": "Total Detected Users", "value": total_detected_users},
+            {"name": "Most Active Honeytrap", "value": most_active_honeytrap[0]["_id"] if most_active_honeytrap else "N/A"},
+            {"name": "Most Liked Honeytrap Post", "value": most_liked_post[0]["title"] if most_liked_post else "N/A"},
+            {"name": "Most Commented Honeytrap Post", "value": most_commented_post[0]["title"] if most_commented_post else "N/A"},
+        ]
+
+        return statistics
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 schedule_analysis()

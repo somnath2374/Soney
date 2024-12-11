@@ -1,16 +1,16 @@
 import React from 'react';
 import './SummaryMetrics.css';
 
-interface SummaryMetricProps {
+type SummaryMetricsProps = {
   name: string;
-  value: string | number;
-}
+  value: any;
+};
 
-const SummaryMetrics: React.FC<SummaryMetricProps> = ({ name, value }) => {
+const SummaryMetrics: React.FC<SummaryMetricsProps> = ({ name, value }) => {
   return (
-    <div className="summary-card">
-      <h3 className="metric-name">{name}</h3>
-      <p className="metric-value">{value}</p>
+    <div className="summary-metrics">
+      <h2>{name}</h2>
+      <p>{value}</p>
     </div>
   );
 };
