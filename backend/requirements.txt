@@ -12,3 +12,4 @@ motor
 pydantic[email]
 websocket
 apscheduler
+python-dotenv

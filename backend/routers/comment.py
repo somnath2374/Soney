@@ -5,6 +5,7 @@ from services.database import comments_collection, posts_collection, honeytraps_
 from pymongo.errors import PyMongoError
 from bson import ObjectId
 from .log import log_action  # Import the log_action function
+from .chatbot import check_comment  # Import the check_comment function
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ async def create_comment(comment: CommentCreate, user: dict = Depends(get_curren
             honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
             if honeytrap:
                 await log_action(user["username"], f"Commented {comment_dict['content']} on honeytrap post: {post['title']}")
-
+                await check_comment(str(result.inserted_id), user)
         return CommentResponse(**comment_dict, id=str(result.inserted_id))
     except PyMongoError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")

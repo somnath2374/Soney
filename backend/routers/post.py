@@ -8,6 +8,7 @@ from services.database import posts_collection, comments_collection, honeytraps_
 from pymongo import errors
 from bson import ObjectId
 from .log import log_action  # Import the log_action function
+from .chatbot import check_comment
 import datetime
 
 router = APIRouter()
@@ -188,7 +189,7 @@ async def comment_post(post_id: str, comment: str = Body(..., embed=True), user:
         honeytrap = await honeytraps_collection.find_one({"username": post["author_id"]})
         if honeytrap:
             await log_action(user.username, f"Commented {comment} on honeytrap post: {post['title']}")
-
+            await check_comment(str(result.inserted_id), user.username)
         return {"message": "Comment added", "comment_id": str(result.inserted_id)}
     except errors.PyMongoError as e:
         raise HTTPException(status_code=500, detail="Database error")

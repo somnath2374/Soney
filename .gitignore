@@ -7,3 +7,4 @@ backend/bin
 backend/lib
 backend/lib64
 pyvenv.cfg
+.env
