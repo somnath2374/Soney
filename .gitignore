@@ -8,3 +8,5 @@ backend/lib
 backend/lib64
 pyvenv.cfg
 .env
+honeytrap/package.json
+honeytrap/package-lock.json

@@ -1,18 +1,17 @@
 .dashboard {
-    padding: 2rem;
-    text-align: center;
-  }
-  
-  .dashboard-heading {
-    font-size: 2rem;
-    margin-bottom: 2rem;
-    color: #333;
-  }
-  
-  .metrics-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
-  }
-  
+  padding: 2rem;
+  text-align: center;
+}
+
+.dashboard-heading {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.metrics-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}

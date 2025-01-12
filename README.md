@@ -1,5 +1,5 @@
 # Soney
-CNS Project<br>
+CNS-Project<br>
 
 
 # Chat application
@@ -14,7 +14,7 @@ terminal -2: cd frontend && npm start<br>
 terminal -3: cd honeytrap &&  npm start<br>
 
 
-phase-1: Social media application ready<br>
+phase-1:Social media application ready<br>
 Implemented:<br>
 1. Signup<br>
 2. Login<br>
