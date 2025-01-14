@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getFriends, getUserProfile, getMessages, sendMessage } from '../services/api';
+import { getFriends, getUserProfile, getMessages, sendMessage,startAnalysis } from '../services/api';
 import './Chat.css';
 
 const WEBSOCKET_URL = 'ws://127.0.0.1:8000/ws/chat/';
@@ -108,6 +108,16 @@ const Chat: React.FC = () => {
       scrollToBottom();
     }
   };
+  // Add new state
+const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+// Add analyze function after handleSendMessage
+const handleAnalyze = async () => {
+  if (selectedFriend) {
+    setIsAnalyzing(true);
+    await startAnalysis(selectedFriend);
+  }
+};
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -128,7 +138,15 @@ const Chat: React.FC = () => {
       <div className='chat'>
         {selectedFriend ? (
           <>
-            <div className='chat-header'>{selectedFriend}</div>
+            <div className='chat-header'>{selectedFriend}
+            <button 
+              className='analyze-button'
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? 'Analyzing...' : 'Analyze User'}
+            </button>
+            </div>
             <div className='chat-messages'>
               {messages.map((message, index) => (
                 <div

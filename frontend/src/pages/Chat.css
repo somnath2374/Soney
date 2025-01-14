@@ -40,6 +40,7 @@
 
 .friends-list-header {
   padding: 16px;
+  height: 32px;
   background-color: var(--navbar-button-bg-color);
   color: rgb(0, 0, 0);
   font-size: 1.2em;
@@ -80,8 +81,30 @@
   font-weight: bold;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+.analyze-button {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
+.analyze-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.analyze-button:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.analyze-button:hover {
+  background-color: #45a049;
+}
 .chat-messages {
   flex-grow: 1;
   padding: 20px;

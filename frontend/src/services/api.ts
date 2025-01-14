@@ -45,6 +45,25 @@ export const getUserProfile = async () => {
   return response.data;
 };
 
+interface Message {
+  sender_id: string,
+  receiver_id: string,
+  message: string,
+  timestamp: string,
+  read: boolean
+}
+// Add these new endpoints
+export const startAnalysis = async (friendId: string) => {
+  const response = await axios.post(`/chat/analyze/${friendId}`);
+  return response.data;
+};
+
+export const getAnalysisResult = async (friendId: string) => {
+  const response = await axios.get(`/chat/analyze/result/${friendId}`);
+  return response.data;
+};
+
+
 //Posts
 export const getPosts = async () => {
   const response = await axios.get('/post/posts');

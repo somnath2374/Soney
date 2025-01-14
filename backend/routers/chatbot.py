@@ -80,3 +80,62 @@ async def check_comment(comment_id: str, user: dict = Depends(get_current_user))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+def generate_conversation(user_input, conversation_history=None):
+    context = conversation_history or []
+    messages = [
+        {
+            "role": "system",
+            "content": "You are engaging in a natural conversation to evaluate user genuineness. Maintain context and ask relevant follow-up questions."
+        }
+    ]
+    
+    # Add conversation history
+    for msg in context:
+        messages.append({"role": "user" if msg["is_user"] else "assistant", "content": msg["message"]})
+    
+    messages.append({"role": "user", "content": user_input})
+    
+    chat_completion = client.chat.completions.create(
+        messages=messages,
+        model="llama3-8b-8192",
+    )
+    
+    return chat_completion.choices[0].message.content.strip()
+
+def is_user_genuine(conversation_transcript):
+    """
+    Analyzes a conversation transcript to determine if the user is genuine.
+
+    Args:
+        conversation_transcript (str): The full conversation transcript.
+
+    Returns:
+        str: "yes" if the user is genuine, otherwise "no".
+    """
+    input_message = (
+        f"Analyze the following conversation transcript to determine if the user is genuine:\n\n"
+        f"{conversation_transcript}\n\n"
+        f"Consider factors such as consistency, detail, relevance, and natural engagement. "
+        f"Respond with 'yes' if the user is genuine, and 'no' if not."
+    )
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a conversation genuineness analyzer. Your task is to determine if a user is genuine based on their responses. "
+                           "Assess the transcript for consistency (are their answers logical and aligned?), detail (do they provide specific, non-generic responses?), "
+                           "relevance (do their replies stay on topic?), and natural engagement (do they contribute meaningfully to the conversation?). "
+                           "Always respond with 'yes' if the user appears genuine and 'no' if they do not, followed by a one-sentence reason."
+            },
+            {
+                "role": "user",
+                "content": input_message,
+            }
+        ],
+        model="llama3-8b-8192",
+    )
+
+    # Extract the one-word response
+    return chat_completion.choices[0].message.content.strip().lower()
+

@@ -2,15 +2,19 @@ from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, Depends,
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from utils.auth import get_current_user
-from services.database import users_collection, chats_collection
+from services.database import users_collection, chats_collection, analysis_collection
 from models.chat import ChatMessage, ChatCreate, ChatResponse
 from models.user import UserResponse
 from typing import List
 from bson import ObjectId
 from datetime import datetime
+from routers.chatbot import generate_conversation, is_user_genuine
 import json
 import asyncio
 import logging
+from routers.chatbot import generate_conversation, is_user_genuine
+
+# Add new collection for analysis
 
 ws = FastAPI()
 
@@ -49,6 +53,54 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
         while True:
             data = await websocket.receive_text()
             message_data = json.loads(data)  # Parse the JSON string to a dictionary
+
+            # Check if there's an ongoing analysis
+            analysis = await analysis_collection.find_one({
+                "user_id": receiver_id,
+                "friend_id": user.username,
+                "status": "ongoing"
+            })
+            
+            if analysis:
+                # Update conversation history
+                analysis["conversation_history"].append({
+                    "is_user": True,
+                    "message": message_data["message"]
+                })
+                
+                # Generate AI response
+                ai_response = generate_conversation(
+                    message_data["message"],
+                    analysis["conversation_history"]
+                )
+                
+                # Add AI response to history
+                analysis["conversation_history"].append({
+                    "is_user": False,
+                    "message": ai_response
+                })
+                
+                # Check if enough exchanges for analysis
+                if len(analysis["conversation_history"]) >= 6:
+                    is_genuine = is_user_genuine(str(analysis["conversation_history"]))
+                    analysis["result"] = is_genuine
+                    analysis["status"] = "completed"
+                
+                await analysis_collection.update_one(
+                    {"_id": analysis["_id"]},
+                    {"$set": analysis}
+                )
+                
+                # Send AI response
+                ai_message = {
+                    "sender_id": receiver_id,
+                    "receiver_id": user.username,
+                    "message": ai_response,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "is_ai": True
+                }
+                await websocket.send_text(json.dumps(ai_message))
+            
             chat_message = ChatMessage(
                 sender_id=user.username,
                 receiver_id=receiver_id,
@@ -61,6 +113,7 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
             chat_message_dict["timestamp"] = chat_message_dict["timestamp"].isoformat()  # Convert datetime to string
             if receiver_id in active_connections:
                 await active_connections[receiver_id].send_text(json.dumps(chat_message_dict))
+            
     except WebSocketDisconnect:
         if user.username in active_connections:
             del active_connections[user.username]
@@ -70,6 +123,60 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
         if user.username in active_connections:
             del active_connections[user.username]
         await websocket.close(code=1011)
+
+@router.post("/analyze/{friend_id}")
+async def start_analysis(friend_id: str, user: UserResponse = Depends(get_current_user)):
+    conversation_history = []
+    ai_message = generate_conversation("Hello!", conversation_history)
+    
+    analysis_session = {
+        "user_id": user.username,
+        "friend_id": friend_id,
+        "conversation_history": conversation_history,
+        "status": "ongoing",
+        "timestamp": datetime.utcnow()
+    }
+    
+    await analysis_collection.insert_one(analysis_session)
+    
+    # Send AI message through WebSocket
+    if friend_id in active_connections:
+        message = {
+            "sender_id": user.username,
+            "receiver_id": friend_id,
+            "message": ai_message,
+            "timestamp": datetime.utcnow().isoformat(),
+            "is_ai": True,
+        }
+        await active_connections[friend_id].send_text(json.dumps(message))
+    
+    return {"status": "analysis_started"}
+
+@router.get("/analyze/result/{friend_id}")
+async def get_analysis_result(friend_id: str, user: UserResponse = Depends(get_current_user)):
+    # Get the most recent completed analysis
+    result = await analysis_collection.find_one({
+        "$or": [
+            {"sender_id": user.username, "receiver_id": friend_id},
+            {"sender_id": friend_id, "receiver_id": user.username}
+        ],
+        "analysis_status": "completed"
+    }, sort=[("timestamp", -1)])
+    
+    if result:
+        return {
+            "is_genuine": result.get("analysis_result"),
+            "conversation_count": await analysis_collection.count_documents({
+                "$or": [
+                    {"sender_id": user.username, "receiver_id": friend_id},
+                    {"sender_id": friend_id, "receiver_id": user.username}
+                ],
+                "analysis_status": {"$exists": True}
+            })
+        }
+    
+    return {"status": "no_analysis_found"}
+
 
 @router.get("/messages/{friend_id}", response_model=List[ChatResponse])
 async def get_messages(friend_id: str, user: UserResponse = Depends(get_current_user)):
@@ -93,5 +200,6 @@ async def send_message(chat_create: ChatCreate, user: UserResponse = Depends(get
         mes_dict["timestamp"] = mes_dict["timestamp"].isoformat()  # Convert datetime to string
         await active_connections[chat_create.receiver_id].send_text(json.dumps(mes_dict))
     return ChatResponse(**mes_dict, id=str(result.inserted_id))
+
 
 ws.include_router(router)
