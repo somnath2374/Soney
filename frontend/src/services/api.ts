@@ -45,6 +45,11 @@ export const getUserProfile = async () => {
   return response.data;
 };
 
+export const getDetectedUsers = async () => {
+  const response = await axios.get('/chat/detected-users');
+  return response.data;
+};
+
 interface Message {
   sender_id: string,
   receiver_id: string,

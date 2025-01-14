@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, Depends,
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from utils.auth import get_current_user
-from services.database import users_collection, chats_collection, analysis_collection
+from services.database import users_collection, chats_collection, analysis_collection, detected_collection
 from models.chat import ChatMessage, ChatCreate, ChatResponse
 from models.user import UserResponse
 from typing import List
@@ -30,6 +30,10 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 active_connections = {}
 
+async def get_typing_delay(message: str) -> float:
+    # Simple delay: 1 second per 20 characters
+    return len(message) / 40
+
 @ws.websocket("/chat/{receiver_id}/{token}")
 async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
     await websocket.accept()
@@ -54,6 +58,19 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
             data = await websocket.receive_text()
             message_data = json.loads(data)  # Parse the JSON string to a dictionary
 
+            chat_message = ChatMessage(
+                sender_id=user.username,
+                receiver_id=receiver_id,
+                message=message_data['message'],
+                timestamp=datetime.utcnow()  # Set the timestamp here
+            )
+            result = await chats_collection.insert_one(chat_message.dict(by_alias=True, exclude={"id"}))
+            chat_message.id = str(result.inserted_id)  # Set the id field correctly
+            chat_message_dict = chat_message.dict(by_alias=True)
+            chat_message_dict["timestamp"] = chat_message_dict["timestamp"].isoformat()  # Convert datetime to string
+            if receiver_id in active_connections:
+                await active_connections[receiver_id].send_text(json.dumps(chat_message_dict))
+            
             # Check if there's an ongoing analysis
             analysis = await analysis_collection.find_one({
                 "user_id": receiver_id,
@@ -79,9 +96,10 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
                     "is_user": False,
                     "message": ai_response
                 })
-                
+                delay = await get_typing_delay(ai_response)
+                await asyncio.sleep(delay)
                 # Check if enough exchanges for analysis
-                if len(analysis["conversation_history"]) >= 6:
+                if len(analysis["conversation_history"]) >= 10:
                     is_genuine = is_user_genuine(str(analysis["conversation_history"]))
                     analysis["result"] = is_genuine
                     analysis["status"] = "completed"
@@ -99,21 +117,8 @@ async def websocket_chat(websocket: WebSocket, receiver_id: str, token: str):
                     "timestamp": datetime.utcnow().isoformat(),
                     "is_ai": True
                 }
+                await active_connections[receiver_id].send_text(json.dumps(ai_message))
                 await websocket.send_text(json.dumps(ai_message))
-            
-            chat_message = ChatMessage(
-                sender_id=user.username,
-                receiver_id=receiver_id,
-                message=message_data['message'],
-                timestamp=datetime.utcnow()  # Set the timestamp here
-            )
-            result = await chats_collection.insert_one(chat_message.dict(by_alias=True, exclude={"id"}))
-            chat_message.id = str(result.inserted_id)  # Set the id field correctly
-            chat_message_dict = chat_message.dict(by_alias=True)
-            chat_message_dict["timestamp"] = chat_message_dict["timestamp"].isoformat()  # Convert datetime to string
-            if receiver_id in active_connections:
-                await active_connections[receiver_id].send_text(json.dumps(chat_message_dict))
-            
     except WebSocketDisconnect:
         if user.username in active_connections:
             del active_connections[user.username]
@@ -149,34 +154,51 @@ async def start_analysis(friend_id: str, user: UserResponse = Depends(get_curren
             "is_ai": True,
         }
         await active_connections[friend_id].send_text(json.dumps(message))
-    
+        await active_connections[user.username].send_text(json.dumps(message))
     return {"status": "analysis_started"}
 
 @router.get("/analyze/result/{friend_id}")
 async def get_analysis_result(friend_id: str, user: UserResponse = Depends(get_current_user)):
     # Get the most recent completed analysis
     result = await analysis_collection.find_one({
-        "$or": [
-            {"sender_id": user.username, "receiver_id": friend_id},
-            {"sender_id": friend_id, "receiver_id": user.username}
-        ],
-        "analysis_status": "completed"
-    }, sort=[("timestamp", -1)])
+        "user_id": user.username,
+        "friend_id": friend_id,
+        "status": "completed"
+    }, sort=[("timestamp",-1)])
     
-    if result:
+    if result and "result" in result:
+        if result["result"] != "genuine":
+            existing_record = await detected_collection.find_one({"username": friend_id})
+            if existing_record:
+                if "Spammy chat content" not in existing_record["reasons"]:
+                    await detected_collection.update_one(
+                        {"username": friend_id},
+                        {"$push": {"reasons": f"Spammy chat content: detected as {result["result"]}"}}
+                    )
+            else:
+                await detected_collection.insert_one({
+                    "username": friend_id,
+                    "reasons": [f"Spammy chat content: detected as {result["result"]}"],
+                    "timestamp": datetime.utcnow().isoformat()
+                })
         return {
-            "is_genuine": result.get("analysis_result"),
+            "is_genuine": result["result"],
             "conversation_count": await analysis_collection.count_documents({
-                "$or": [
-                    {"sender_id": user.username, "receiver_id": friend_id},
-                    {"sender_id": friend_id, "receiver_id": user.username}
-                ],
-                "analysis_status": {"$exists": True}
+                "user_id": user.username,
+                "friend_id": friend_id,
+                "status": "completed"
             })
         }
     
     return {"status": "no_analysis_found"}
 
+@router.get("/detected-users")
+async def get_detected_users():
+    detected = await detected_collection.find(
+        {},
+        {"username": 1, "_id": 0}
+    ).sort("timestamp", -1).to_list(1000)
+    return detected
 
 @router.get("/messages/{friend_id}", response_model=List[ChatResponse])
 async def get_messages(friend_id: str, user: UserResponse = Depends(get_current_user)):

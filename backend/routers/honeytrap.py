@@ -5,6 +5,7 @@ from services.database import honeytraps_collection, users_collection, logs_coll
 from utils.auth import get_current_user
 from typing import List
 from routers.automate import *
+from routers.chatbot import generate_realistic_email, generate_realistic_username
 
 router = APIRouter()
 
@@ -13,8 +14,8 @@ logging.basicConfig(level=logging.INFO)
 @router.post("/create", response_model=HoneytrapResponse)
 async def create_honeytrap(honeytrap: HoneytrapCreate, background_tasks: BackgroundTasks):
     try:
-        username = generate_realistic_username()
-        email = generate_realistic_email()
+        username = await generate_realistic_username(honeytrap.purpose)
+        email = await generate_realistic_email(username)
         honeytrap_data = {
             "purpose": honeytrap.purpose,
             "username": username,

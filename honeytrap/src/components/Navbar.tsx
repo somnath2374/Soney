@@ -15,7 +15,6 @@ const Navbar: React.FC = () => {
     '/manage': 'Manage',
     '/log': 'Log',
     '/detections': 'Detections',
-    '/notifications': 'Notifications',
   };
 
   const currentPageTitle = pageTitles[location.pathname] || 'Page';
@@ -37,7 +36,6 @@ const Navbar: React.FC = () => {
             <li><Link to="/manage" onClick={toggleDashboard}>Manage</Link></li>
             <li><Link to="/log" onClick={toggleDashboard}>Log</Link></li>
             <li><Link to="/detections" onClick={toggleDashboard}>Detections</Link></li>
-            <li><Link to="/notifications" onClick={toggleDashboard}>Notifications</Link></li>
           </ul>
         </div>
       )}

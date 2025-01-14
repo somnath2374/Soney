@@ -115,7 +115,7 @@ async def get_post(author_id):
                 comments=comment_responses
             ))
         return post_responses
-    except errors.InvalidId:
+    except errors.InvalidURI:
         raise HTTPException(status_code=400, detail="Invalid post ID")
     except errors.PyMongoError as e:
         raise HTTPException(status_code=500, detail="Database error")

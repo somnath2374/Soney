@@ -105,6 +105,42 @@
 .analyze-button:hover {
   background-color: #45a049;
 }
+
+.analysis-result-message {
+  height: 12px;
+  margin: auto;
+  padding: 10px 20px;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  max-width: 80%;
+  font-weight: bold;
+  font-size: medium;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #1976d2;
+}
+
+.analysis-result-message.positive {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.analysis-result-message.negative {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+.friend-item.suspicious {
+  background-color: #ff6060;
+  border-left: 3px solid #ff4444;
+}
+
+.warning-icon {
+  margin-left: 8px;
+  color: #ff4444;
+}
+
 .chat-messages {
   flex-grow: 1;
   padding: 20px;

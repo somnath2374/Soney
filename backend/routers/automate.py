@@ -7,51 +7,15 @@ from .log import log_action
 import string
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from routers.analyser import analyze_interactions
+from routers.chatbot import generate_enticing_post_content,generate_comment_content
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
 
-def generate_random_string(length=8):
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
-
-def generate_realistic_username():
-    adjectives = ["cool", "fast", "smart", "bright", "dark"]
-    nouns = ["lion", "tiger", "bear", "eagle", "shark"]
-    return f"{random.choice(adjectives)}_{random.choice(nouns)}_{generate_random_string(4)}"
-
-def generate_realistic_email():
-    domains = ["example.com", "test.com", "demo.com"]
-    return f"{generate_random_string(6)}@{random.choice(domains)}"
-
-def generate_enticing_post_content():
-    titles = [
-        "Win a Free iPhone!",
-        "Get Rich Quick with This Simple Trick",
-        "Exclusive Offer: Limited Time Only",
-        "Congratulations! You've Won a Prize",
-        "Earn Money from Home Easily"
-    ]
-    contents = [
-        "Click the link to claim your free iPhone now!",
-        "Learn how to make thousands of dollars with minimal effort.",
-        "Don't miss out on this exclusive offer. Act now!",
-        "You've been selected to win a prize. Click here to claim it.",
-        "Discover how you can earn money from the comfort of your home."
-    ]
-    return random.choice(titles), random.choice(contents)
-
-def generate_comment_content(post_title: str):
-    comments = [
-        f"Wow, {post_title} sounds amazing!",
-        "I can't believe this offer!",
-        "This is too good to be true!",
-        "I'm definitely going to try this.",
-        "Thanks for sharing this information!"
-    ]
-    return random.choice(comments)
-
 async def create_enticing_post(username: str):
-    title, content = generate_enticing_post_content()
+    honeytrap = await honeytraps_collection.find_one({"username": username})
+    purpose = honeytrap["purpose"]
+    title, content = await generate_enticing_post_content(purpose)
     post_data = {
         "title": title,
         "content": content,
@@ -135,12 +99,13 @@ async def interact_with_posts(username: str):
             )
             await log_action(username, f"Disliked post {post['title']}")
         elif action == "comment":
-            comment_content = generate_comment_content(post["title"])
+            comment_content = await generate_comment_content(post["title"],post["content"])
             comment_data = {
                 "post_id": post["_id"],
                 "author_id": username,
                 "content": comment_content,
-                "created_at": datetime.datetime.now().isoformat()
+                "created_at": datetime.datetime.now().isoformat(),
+                "comments": []
             }
             result = await comments_collection.insert_one(comment_data)
             await posts_collection.update_one(
